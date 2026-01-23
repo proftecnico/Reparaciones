@@ -2,24 +2,30 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gestión de Flota</title>
     
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0d6efd">
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Gestion Flota","short_name":"Flota","display":"standalone","start_url":".","background_color":"#ffffff","theme_color":"#0d6efd","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/741/741407.png","sizes":"512x512","type":"image/png"}]}'>
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/741/741407.png">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚛</text></svg>">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     
     <style>
         :root { --bg-light: #f4f6f9; }
-        body { background-color: var(--bg-light); font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--bg-light); font-family: 'Segoe UI', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
         
         /* ESTILOS VISUALES */
         .fuera-servicio { background-color: #ffe6e6 !important; color: #dc3545; font-weight: bold; text-decoration: line-through; }
         .table-responsive { max-height: 600px; overflow-y: auto; border-radius: 10px; }
         .table thead th { position: sticky; top: 0; background-color: #343a40; color: white; z-index: 2; border: none; }
         tr { transition: transform 0.2s ease, background-color 0.2s; }
-        tr:hover { transform: scale(1.005); background-color: #fff !important; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 1; position: relative; }
         
         /* LOGIN ANIMADO */
         #pantalla-login {
@@ -42,6 +48,11 @@
         .form-check-input:checked + .form-check-label { color: #0d6efd; font-weight: bold; }
 
         #tablaCuerpo:empty::before { content: "No hay reportes pendientes"; display: block; text-align: center; padding: 20px; color: #adb5bd; font-style: italic; width: 100%; }
+        
+        /* Ajuste para móvil */
+        @media (max-width: 768px) {
+            .btn-texto { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -73,11 +84,14 @@
                 </div>
             </div>
             <div class="d-flex gap-2">
-                <button id="btnAdminFlota" onclick="abrirModalFlota()" class="btn btn-warning shadow-sm" style="display:none;">
-                    <i class="fas fa-cogs"></i> <span class="d-none d-md-inline">Flota</span>
+                <button id="btnStats" onclick="abrirEstadisticas()" class="btn btn-info text-white shadow-sm" style="display:none;" title="Estadísticas y Excel">
+                    <i class="fas fa-chart-pie"></i> <span class="btn-texto">Reportes</span>
                 </button>
-                <button onclick="cerrarSesion()" class="btn btn-outline-danger shadow-sm">
-                    <i class="fas fa-sign-out-alt"></i> <span class="d-none d-md-inline">Salir</span>
+                <button id="btnAdminFlota" onclick="abrirModalFlota()" class="btn btn-warning shadow-sm" style="display:none;" title="Gestionar Unidades">
+                    <i class="fas fa-cogs"></i> <span class="btn-texto">Flota</span>
+                </button>
+                <button onclick="cerrarSesion()" class="btn btn-outline-danger shadow-sm" title="Salir">
+                    <i class="fas fa-sign-out-alt"></i>
                 </button>
             </div>
         </div>
@@ -189,11 +203,51 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalEstadisticas" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-chart-bar me-2"></i>Estadísticas y Reportes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted text-center mb-3">Distribución de Fallas</h6>
+                                <canvas id="chartTipos"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted text-center mb-3">Top Unidades Problemáticas</h6>
+                                <canvas id="chartUnidades"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button onclick="descargarExcel()" class="btn btn-success btn-lg shadow">
+                        <i class="fas fa-file-excel me-2"></i>Descargar Historial Completo a Excel
+                    </button>
+                    <small class="text-muted text-center mt-2">El archivo incluye todos los reportes históricos y sus estados.</small>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, push, update, remove, onChildAdded, onChildChanged, onChildRemoved, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, push, update, remove, onChildAdded, onChildChanged, onChildRemoved, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDVeuhJt3jdlkGcLr0nvuJA4qZldZp0eXw",
@@ -212,24 +266,22 @@
 
     let rolActual = ""; 
     let mapaBajas = {};
+    let chartInstanceTipos = null;
+    let chartInstanceUnidades = null;
 
-    // --- LOGIN CORREGIDO ---
+    // --- LOGIN ---
     window.intentarLogin = function(rol) {
         let pass = null;
-        let nombreRolParaApp = "";
-
-        if (rol === 'reportador') {
-            nombreRolParaApp = "Reportador";
-        } else if (rol === 'tecnico') {
+        if (rol === 'tecnico') {
             pass = prompt("Ingrese Clave de Técnico:");
             if (pass !== "1234") { mostrarToast('⛔ Clave incorrecta', 'danger'); return; }
-            nombreRolParaApp = "Técnico"; // IMPORTANTE: Con tilde
         } else if (rol === 'supervisor') {
             pass = prompt("Ingrese Clave de Supervisor:");
             if (pass !== "admin") { mostrarToast('⛔ Clave incorrecta', 'danger'); return; }
-            nombreRolParaApp = "Supervisor";
         }
-        iniciarApp(nombreRolParaApp);
+        let nombreRol = rol.charAt(0).toUpperCase() + rol.slice(1);
+        if(rol === 'tecnico') nombreRol = 'Técnico'; // Ajuste tilde
+        iniciarApp(nombreRol);
     };
 
     function iniciarApp(rolNombre) {
@@ -240,6 +292,7 @@
         
         if(rolActual === 'Supervisor') {
             document.getElementById('btnAdminFlota').style.display = 'block';
+            document.getElementById('btnStats').style.display = 'block';
         }
         activarEscuchasFirebase();
     }
@@ -267,6 +320,7 @@
         adminSelectGrupo.appendChild(opt.cloneNode(true));
     });
 
+    // --- CARGA UNIDADES ---
     window.cargarUnidades = function(tipo) {
         const idSelectorGrupo = tipo === 'principal' ? 'selectorGrupo' : 'adminSelectorGrupo';
         const idSelectorUnidad = tipo === 'principal' ? 'selectorUnidad' : 'adminSelectorUnidad';
@@ -316,6 +370,7 @@
         });
     }
 
+    // --- GESTIÓN FLOTA ---
     window.abrirModalFlota = function() { new bootstrap.Modal(document.getElementById('modalFlota')).show(); };
     window.verificarEstadoAdmin = function() {
         const unidad = document.getElementById('adminSelectorUnidad').value;
@@ -333,17 +388,114 @@
             btn.onclick = function() { toggleBaja(unidad, true); };
         }
     };
-
     function toggleBaja(unidad, darDeBaja) {
         const refUnidad = ref(db, `estado_flota/${unidad}`);
-        if(darDeBaja) {
-            set(refUnidad, true).then(() => mostrarToast(`Unidad ${unidad} dada de BAJA`, 'success')).catch(err => mostrarToast('Error', 'danger'));
-        } else {
-            remove(refUnidad).then(() => mostrarToast(`Unidad ${unidad} REHABILITADA`, 'success')).catch(err => mostrarToast('Error', 'danger'));
-        }
+        if(darDeBaja) { set(refUnidad, true).then(() => mostrarToast(`Unidad ${unidad} dada de BAJA`, 'success')); }
+        else { remove(refUnidad).then(() => mostrarToast(`Unidad ${unidad} REHABILITADA`, 'success')); }
         setTimeout(() => { cargarUnidades('admin'); document.getElementById('adminSelectorUnidad').value = unidad; verificarEstadoAdmin(); cargarUnidades('principal'); }, 500);
     }
 
+    // --- ESTADÍSTICAS Y EXCEL ---
+    window.abrirEstadisticas = function() {
+        new bootstrap.Modal(document.getElementById('modalEstadisticas')).show();
+        
+        // Obtener datos para gráficos
+        get(dbRef).then((snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                let conteoFallas = {};
+                let conteoUnidades = {};
+
+                Object.values(data).forEach(reporte => {
+                    // Contar fallas
+                    if (reporte.fallas) {
+                        reporte.fallas.forEach(f => {
+                            conteoFallas[f] = (conteoFallas[f] || 0) + 1;
+                        });
+                    }
+                    // Contar unidad problemática
+                    conteoUnidades[reporte.unidad] = (conteoUnidades[reporte.unidad] || 0) + 1;
+                });
+
+                // Renderizar gráficos
+                renderizarCharts(conteoFallas, conteoUnidades);
+            }
+        });
+    };
+
+    function renderizarCharts(fallas, unidades) {
+        const ctxTipos = document.getElementById('chartTipos').getContext('2d');
+        const ctxUnidades = document.getElementById('chartUnidades').getContext('2d');
+
+        if(chartInstanceTipos) chartInstanceTipos.destroy();
+        if(chartInstanceUnidades) chartInstanceUnidades.destroy();
+
+        // 1. Chart Tipos (Pie)
+        chartInstanceTipos = new Chart(ctxTipos, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(fallas),
+                datasets: [{
+                    data: Object.values(fallas),
+                    backgroundColor: ['#dc3545', '#ffc107', '#0dcaf0', '#198754'], // Colores acordes a badges
+                    borderWidth: 0
+                }]
+            }
+        });
+
+        // 2. Chart Unidades (Bar) - Top 5
+        // Ordenar unidades por cantidad
+        const topUnidades = Object.entries(unidades)
+            .sort(([,a],[,b]) => b-a)
+            .slice(0, 5);
+
+        chartInstanceUnidades = new Chart(ctxUnidades, {
+            type: 'bar',
+            data: {
+                labels: topUnidades.map(u => u[0]),
+                datasets: [{
+                    label: 'Reportes',
+                    data: topUnidades.map(u => u[1]),
+                    backgroundColor: '#0d6efd',
+                    borderRadius: 5
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+        });
+    }
+
+    window.descargarExcel = function() {
+        get(dbRef).then((snapshot) => {
+            if (snapshot.exists()) {
+                const rawData = snapshot.val();
+                // Convertir objeto Firebase a Array plano para Excel
+                const dataParaExcel = Object.keys(rawData).map(key => {
+                    const r = rawData[key];
+                    return {
+                        Unidad: r.unidad,
+                        Fallas: Array.isArray(r.fallas) ? r.fallas.join(", ") : r.fallas,
+                        Fecha: r.fecha,
+                        Hora: r.hora,
+                        Estado: r.estado,
+                        Usuario: r.usuario || "Desconocido",
+                        Observaciones: r.observaciones || ""
+                    };
+                });
+
+                // Crear libro
+                const ws = XLSX.utils.json_to_sheet(dataParaExcel);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Reportes");
+
+                // Descargar
+                XLSX.writeFile(wb, "Reportes_Flota_" + new Date().toISOString().slice(0,10) + ".xlsx");
+            } else {
+                mostrarToast("No hay datos para exportar", "warning");
+            }
+        });
+    };
+
+    // --- FORM SUBMIT ---
     document.getElementById('reporteForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const unidad = document.getElementById('selectorUnidad').value;
@@ -362,6 +514,7 @@
         });
     });
 
+    // --- ACCIONES TABLA ---
     window.marcarCompletado = function(id) { 
         if(confirm("¿Confirmar reparación completada?")) {
             update(ref(db, 'reparaciones/' + id), { estado: "Completado", fechaResolucion: new Date().toLocaleDateString('es-AR') })
@@ -378,6 +531,7 @@
         new bootstrap.Modal(document.getElementById('modalObservaciones')).show();
     };
 
+    // --- ESCUCHAS FIREBASE ---
     function activarEscuchasFirebase() {
         document.getElementById('tablaCuerpo').innerHTML = "";
         onValue(dbFlotaRef, (snapshot) => { mapaBajas = snapshot.val() || {}; if(document.getElementById('selectorGrupo').value !== "") cargarUnidades('principal'); });
@@ -390,8 +544,6 @@
         let badges = (data.fallas||[]).map(f => `<span class="badge rounded-pill ${f==='GPS'?'bg-danger':f==='RFID'?'bg-warning text-dark':f==='NVR'?'bg-info text-dark':'bg-success'} badge-falla border border-light shadow-sm">${f}</span>`).join('');
         let acciones = `<button onclick="mostrarObservaciones('${(data.observaciones||'').replace(/'/g, "\\'")}')" class="btn btn-sm btn-outline-info me-1 border-0"><i class="fas fa-eye"></i></button>`;
         
-        // AQUÍ ESTABA LA CORRECCIÓN CLAVE:
-        // Ahora el Técnico (con tilde) entra en este IF
         if (rolActual === 'Técnico' || rolActual === 'Supervisor') {
             if (data.estado !== "Completado") acciones += `<button onclick="marcarCompletado('${key}')" class="btn btn-sm btn-outline-success me-1" title="Listo"><i class="fas fa-check"></i></button>`;
             if (rolActual === 'Supervisor') acciones += `<button onclick="eliminarReporte('${key}')" class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="fas fa-trash-alt"></i></button>`;
@@ -404,7 +556,7 @@
         document.getElementById('tablaCuerpo').insertAdjacentHTML('afterbegin', html);
     }
     
-    // Funciones Auxiliares UI
+    // UI Helpers
     document.getElementById('busquedaTabla').addEventListener('input', function() {
         const filter = this.value.toLowerCase();
         document.querySelectorAll('#tablaCuerpo tr').forEach(row => row.style.display = row.textContent.toLowerCase().includes(filter) ? '' : 'none');
