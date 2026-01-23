@@ -3,23 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Flota - Acceso</title>
+    <title>Gestión de Flota - Sistema Integral</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .fuera-servicio { background-color: #e9ecef; color: #6c757d; font-style: italic; }
+        .fuera-servicio { background-color: #ffe6e6; color: #dc3545; font-weight: bold; }
         .badge-falla { margin-right: 5px; font-size: 0.9em; }
-        .table-responsive { max-height: 600px; overflow-y: auto; }
+        .table-responsive { max-height: 500px; overflow-y: auto; }
         tr { transition: all 0.5s ease; }
         
-        /* Estilos para pantalla de Login */
+        /* Estilos Login */
         #pantalla-login {
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            height: 100vh; display: flex; align-items: center; justify-content: center;
             background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);
         }
-        #pantalla-app { display: none; } /* Oculto al principio */
+        #pantalla-app { display: none; }
         .card-login { width: 100%; max-width: 400px; }
     </style>
 </head>
@@ -28,18 +25,10 @@
 <div id="pantalla-login">
     <div class="card shadow card-login p-4">
         <h3 class="text-center mb-4">🔐 Control de Flota</h3>
-        <p class="text-center text-muted">Seleccione su perfil para ingresar:</p>
-        
         <div class="d-grid gap-3">
-            <button onclick="intentarLogin('reportador')" class="btn btn-outline-primary btn-lg">
-                📝 Soy Reportador
-            </button>
-            <button onclick="intentarLogin('tecnico')" class="btn btn-outline-success btn-lg">
-                🔧 Soy Técnico
-            </button>
-            <button onclick="intentarLogin('supervisor')" class="btn btn-outline-dark btn-lg">
-                👮 Soy Supervisor
-            </button>
+            <button onclick="intentarLogin('reportador')" class="btn btn-outline-primary btn-lg">📝 Soy Reportador</button>
+            <button onclick="intentarLogin('tecnico')" class="btn btn-outline-success btn-lg">🔧 Soy Técnico</button>
+            <button onclick="intentarLogin('supervisor')" class="btn btn-outline-dark btn-lg">👮 Soy Supervisor</button>
         </div>
     </div>
 </div>
@@ -51,19 +40,20 @@
             <h2>🛠️ Sistema de Reportes</h2>
             <span class="badge bg-secondary" id="badgeRolUsuario">Rol: --</span>
         </div>
-        <button onclick="cerrarSesion()" class="btn btn-sm btn-outline-danger">Cerrar Sesión 🔒</button>
+        <div>
+            <button id="btnAdminFlota" onclick="abrirModalFlota()" class="btn btn-warning me-2" style="display:none;">⚙️ Gestionar Flota</button>
+            <button onclick="cerrarSesion()" class="btn btn-sm btn-outline-danger">Salir 🔒</button>
+        </div>
     </div>
 
     <div class="card shadow mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Nuevo Reporte</h5>
-        </div>
+        <div class="card-header bg-primary text-white"><h5 class="mb-0">Nuevo Reporte</h5></div>
         <div class="card-body">
             <form id="reporteForm">
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">1. Grupo</label>
-                        <select class="form-select" id="selectorGrupo" onchange="cargarUnidades()" required>
+                        <select class="form-select" id="selectorGrupo" onchange="cargarUnidades('principal')" required>
                             <option value="">-- Seleccionar --</option>
                         </select>
                     </div>
@@ -72,52 +62,71 @@
                         <select class="form-select" id="selectorUnidad" onchange="cargarOpcionesFalla()" disabled required>
                             <option value="">-- Primero elija grupo --</option>
                         </select>
+                        <small id="avisoBaja" class="text-danger fw-bold mt-1" style="display:none;">⚠️ Esta unidad está dada de BAJA</small>
                     </div>
                 </div>
                 <div class="mb-3 p-3 bg-white border rounded" id="panelFallas" style="display:none;">
                     <label class="form-label fw-bold text-danger">3. Fallas:</label>
                     <div id="contenedorCheckboxes" class="d-flex flex-wrap gap-3"></div>
                 </div>
-                <div class="mb-3">
-                    <textarea id="observaciones" class="form-control" rows="2" placeholder="Observaciones..."></textarea>
-                </div>
+                <div class="mb-3"><textarea id="observaciones" class="form-control" rows="2" placeholder="Observaciones..."></textarea></div>
                 <button type="submit" class="btn btn-success w-100 fw-bold">➕ Enviar Reporte</button>
             </form>
         </div>
     </div>
 
     <div class="card shadow">
-        <div class="card-header bg-dark text-white">
-            <h5 class="mb-0">📋 Tablero de Control</h5>
-        </div>
+        <div class="card-header bg-dark text-white"><h5 class="mb-0">📋 Tablero de Control</h5></div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0 text-center align-middle">
                     <thead class="table-secondary sticky-top">
-                        <tr>
-                            <th>Unidad</th>
-                            <th>Fallas</th>
-                            <th>Fecha</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
+                        <tr><th>Unidad</th><th>Fallas</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr>
                     </thead>
-                    <tbody id="tablaCuerpo">
-                        </tbody>
+                    <tbody id="tablaCuerpo"></tbody>
                 </table>
             </div>
-            <div id="loading" class="text-center p-3 text-muted">
-                <div class="spinner-border spinner-border-sm" role="status"></div> Conectando...
+            <div id="loading" class="text-center p-3 text-muted"><div class="spinner-border spinner-border-sm"></div> Conectando...</div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalFlota" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title fw-bold">⚙️ Gestionar Estado de Unidades</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Seleccione una unidad para Dar de Baja o Rehabilitar.</p>
+                <div class="mb-3">
+                    <label>Grupo:</label>
+                    <select class="form-select" id="adminSelectorGrupo" onchange="cargarUnidades('admin')">
+                        <option value="">-- Seleccionar --</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Unidad:</label>
+                    <select class="form-select" id="adminSelectorUnidad" onchange="verificarEstadoAdmin()">
+                        <option value="">-- Seleccionar Unidad --</option>
+                    </select>
+                </div>
+                
+                <div id="panelAccionAdmin" class="text-center p-3 border rounded bg-light" style="display:none;">
+                    <h4 id="lblEstadoActual" class="mb-3">Estado: OPERATIVA</h4>
+                    <button id="btnCambiarEstado" onclick="cambiarEstadoUnidad()" class="btn btn-danger w-100">DAR DE BAJA 🚫</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, push, update, remove, onChildAdded, onChildChanged, onChildRemoved, off } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, push, update, remove, onChildAdded, onChildChanged, onChildRemoved, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // --- 1. CONFIGURACIÓN FIREBASE ---
     const firebaseConfig = {
         apiKey: "AIzaSyDVeuhJt3jdlkGcLr0nvuJA4qZldZp0eXw",
         authDomain: "gestionflota-ea461.firebaseapp.com",
@@ -131,22 +140,20 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const dbRef = ref(db, 'reparaciones');
+    const dbFlotaRef = ref(db, 'estado_flota'); // Nueva referencia para estados
 
-    // VARIABLE GLOBAL DE ROL
     let rolActual = ""; 
+    let mapaBajas = {}; // Aquí guardaremos qué unidades están de baja
 
-    // --- 2. SISTEMA DE LOGIN ---
+    // --- LOGIN ---
     window.intentarLogin = function(rol) {
-        if (rol === 'reportador') {
-            iniciarApp('Reportador');
-        } else if (rol === 'tecnico') {
-            let pass = prompt("Ingrese la clave de Técnico:");
-            if (pass === "1234") iniciarApp('Técnico');
-            else alert("Clave incorrecta");
+        if (rol === 'reportador') iniciarApp('Reportador');
+        else if (rol === 'tecnico') {
+            if (prompt("Clave Técnico:") === "1234") iniciarApp('Técnico');
+            else alert("Error");
         } else if (rol === 'supervisor') {
-            let pass = prompt("Ingrese la clave de Supervisor:");
-            if (pass === "admin") iniciarApp('Supervisor');
-            else alert("Clave incorrecta");
+            if (prompt("Clave Supervisor:") === "admin") iniciarApp('Supervisor');
+            else alert("Error");
         }
     };
 
@@ -156,16 +163,16 @@
         document.getElementById('pantalla-app').style.display = 'block';
         document.getElementById('badgeRolUsuario').innerText = "Rol: " + rolActual;
         
-        // AQUÍ ESTÁ EL CAMBIO CLAVE:
-        // Activamos Firebase recién AHORA, cuando ya sabemos quién es el usuario.
-        activarEscuchasFirebase(); 
+        // Mostrar botón admin solo a Supervisor
+        if(rolActual === 'Supervisor') {
+            document.getElementById('btnAdminFlota').style.display = 'block';
+        }
+
+        activarEscuchasFirebase();
     }
+    window.cerrarSesion = function() { location.reload(); };
 
-    window.cerrarSesion = function() {
-        location.reload(); // Recarga la página para limpiar todo
-    };
-
-    // --- 3. LÓGICA DE FLOTA Y UI ---
+    // --- CONFIG FLOTA ---
     const configFlota = [
         { label: "Serie 0100 (0104-0186)", min: 104, max: 186, caps: ["GPS"] },
         { label: "Serie 1000 A (1016-1081)", min: 1016, max: 1081, caps: ["GPS", "RFID", "Censado", "NVR"] },
@@ -178,27 +185,69 @@
         { label: "Serie 1900 (1902-1927)", min: 1902, max: 1927, caps: ["GPS", "NVR"] },
         { label: "Especial (1950)", min: 1950, max: 1950, caps: ["GPS"] }
     ];
-    const unidadesFueraDeServicio = [1020, 1021]; 
 
-    window.cargarUnidades = function() {
-        const index = document.getElementById('selectorGrupo').value;
-        const selectUnidad = document.getElementById('selectorUnidad');
-        const panelFallas = document.getElementById('panelFallas');
+    // Llenar selects de grupos (Principal y Admin)
+    const selectGrupo = document.getElementById('selectorGrupo');
+    const adminSelectGrupo = document.getElementById('adminSelectorGrupo');
+    configFlota.forEach((grupo, index) => {
+        let opt = new Option(grupo.label, index);
+        selectGrupo.appendChild(opt);
+        adminSelectGrupo.appendChild(opt.cloneNode(true));
+    });
+
+    // --- LÓGICA DE CARGA DE UNIDADES ---
+    window.cargarUnidades = function(tipo) {
+        // 'tipo' puede ser 'principal' (formulario) o 'admin' (modal)
+        const idSelectorGrupo = tipo === 'principal' ? 'selectorGrupo' : 'adminSelectorGrupo';
+        const idSelectorUnidad = tipo === 'principal' ? 'selectorUnidad' : 'adminSelectorUnidad';
+        
+        const index = document.getElementById(idSelectorGrupo).value;
+        const selectUnidad = document.getElementById(idSelectorUnidad);
+        
         selectUnidad.innerHTML = '<option value="">-- Seleccionar --</option>';
-        selectUnidad.disabled = true; panelFallas.style.display = 'none';
-        if (index === "") return;
-        const grupo = configFlota[index]; selectUnidad.disabled = false;
+        if(tipo === 'principal') {
+            document.getElementById('panelFallas').style.display = 'none';
+            document.getElementById('avisoBaja').style.display = 'none';
+        } else {
+            document.getElementById('panelAccionAdmin').style.display = 'none';
+        }
+
+        if (index === "") { selectUnidad.disabled = true; return; }
+        
+        const grupo = configFlota[index]; 
+        selectUnidad.disabled = false;
+
         for (let i = grupo.min; i <= grupo.max; i++) {
             let opt = document.createElement('option');
             let num = i.toString().padStart(4, '0');
             opt.value = num;
-            if (unidadesFueraDeServicio.includes(i)) {
-                opt.text = `${num} (BAJA)`; opt.disabled = true; opt.classList.add('fuera-servicio');
-            } else { opt.text = num; }
+            
+            // VERIFICAR SI ESTÁ DE BAJA (Usando el mapa descargado de Firebase)
+            let estaDeBaja = mapaBajas[num] === true;
+
+            if (tipo === 'principal') {
+                // En el form principal, si está de baja, se deshabilita
+                if (estaDeBaja) {
+                    opt.text = `${num} (FUERA DE SERVICIO)`;
+                    opt.disabled = true;
+                    opt.classList.add('fuera-servicio');
+                } else {
+                    opt.text = num;
+                }
+            } else {
+                // En el admin, mostramos el estado pero dejamos seleccionar para cambiarlo
+                if (estaDeBaja) {
+                    opt.text = `${num} 🔴 BAJA`;
+                    opt.style.color = 'red';
+                } else {
+                    opt.text = `${num} 🟢 OK`;
+                }
+            }
             selectUnidad.appendChild(opt);
         }
     }
 
+    // --- CARGA DE FALLAS (Formulario Principal) ---
     window.cargarOpcionesFalla = function() {
         const index = document.getElementById('selectorGrupo').value;
         const contenedor = document.getElementById('contenedorCheckboxes');
@@ -213,112 +262,113 @@
         });
     }
 
-    const selectGrupo = document.getElementById('selectorGrupo');
-    configFlota.forEach((grupo, index) => {
-        let opt = document.createElement('option'); opt.value = index; opt.text = grupo.label; selectGrupo.appendChild(opt);
-    });
+    // --- GESTIÓN DE ESTADO (SUPERVISOR) ---
+    window.abrirModalFlota = function() {
+        new bootstrap.Modal(document.getElementById('modalFlota')).show();
+    };
 
-    // --- 4. ENVIAR DATOS ---
+    window.verificarEstadoAdmin = function() {
+        const unidad = document.getElementById('adminSelectorUnidad').value;
+        if(!unidad) { document.getElementById('panelAccionAdmin').style.display = 'none'; return; }
+
+        document.getElementById('panelAccionAdmin').style.display = 'block';
+        const lbl = document.getElementById('lblEstadoActual');
+        const btn = document.getElementById('btnCambiarEstado');
+
+        if(mapaBajas[unidad] === true) {
+            lbl.innerText = `Unidad ${unidad}: FUERA DE SERVICIO 🔴`;
+            lbl.className = "mb-3 text-danger fw-bold";
+            btn.innerText = "✅ REHABILITAR UNIDAD";
+            btn.className = "btn btn-success w-100";
+            btn.onclick = function() { toggleBaja(unidad, false); };
+        } else {
+            lbl.innerText = `Unidad ${unidad}: OPERATIVA 🟢`;
+            lbl.className = "mb-3 text-success fw-bold";
+            btn.innerText = "🚫 DAR DE BAJA";
+            btn.className = "btn btn-danger w-100";
+            btn.onclick = function() { toggleBaja(unidad, true); };
+        }
+    };
+
+    function toggleBaja(unidad, darDeBaja) {
+        // Guardamos en Firebase: estado_flota/1020 = true (Baja) o null (Alta)
+        const refUnidad = ref(db, `estado_flota/${unidad}`);
+        if(darDeBaja) {
+            set(refUnidad, true).then(() => alert(`Unidad ${unidad} dada de BAJA`));
+        } else {
+            remove(refUnidad).then(() => alert(`Unidad ${unidad} REHABILITADA`)); // Borrar el nodo la habilita
+        }
+        // Actualizar UI del modal
+        setTimeout(() => {
+            cargarUnidades('admin'); // Recargar lista del modal
+            document.getElementById('adminSelectorUnidad').value = unidad; // Mantener selección
+            verificarEstadoAdmin(); // Refrescar panel
+            cargarUnidades('principal'); // Refrescar lista del form principal
+        }, 500);
+    }
+
+    // --- ENVIAR REPORTE ---
     document.getElementById('reporteForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const unidad = document.getElementById('selectorUnidad').value;
-        const obs = document.getElementById('observaciones').value;
         const checkboxes = document.querySelectorAll('input[name="fallas"]:checked');
         if (checkboxes.length === 0) { alert("Seleccione falla"); return; }
-        let listaFallas = []; checkboxes.forEach(cb => listaFallas.push(cb.value));
         
+        let listaFallas = []; checkboxes.forEach(cb => listaFallas.push(cb.value));
         push(dbRef, {
-            unidad: unidad, fallas: listaFallas, observaciones: obs,
+            unidad: unidad, fallas: listaFallas, observaciones: document.getElementById('observaciones').value,
             fecha: new Date().toLocaleDateString(), hora: new Date().toLocaleTimeString(),
             estado: "Pendiente", usuario: rolActual
         });
-        
         document.getElementById('reporteForm').reset();
         document.getElementById('panelFallas').style.display = 'none';
         document.getElementById('selectorUnidad').disabled = true;
         document.getElementById('selectorUnidad').innerHTML = '<option value="">-- Primero elija grupo --</option>';
     });
 
-    window.marcarCompletado = function(id) {
-        if(confirm("¿Confirmar reparación completada?")) {
-            update(ref(db, 'reparaciones/' + id), { estado: "Completado", fechaResolucion: new Date().toLocaleDateString() });
-        }
-    };
-    window.eliminarReporte = function(id) {
-        if(confirm("¿Eliminar este reporte permanentemente?")) { remove(ref(db, 'reparaciones/' + id)); }
-    };
+    // --- LISTENERS ---
+    window.marcarCompletado = function(id) { if(confirm("¿Reparación completada?")) update(ref(db, 'reparaciones/' + id), { estado: "Completado", fechaResolucion: new Date().toLocaleDateString() }); };
+    window.eliminarReporte = function(id) { if(confirm("¿Eliminar reporte?")) remove(ref(db, 'reparaciones/' + id)); };
 
-    // --- 5. FIREBASE LISTENERS (DENTRO DE FUNCIÓN) ---
     function activarEscuchasFirebase() {
-        // Limpiamos la tabla por si acaso
         document.getElementById('tablaCuerpo').innerHTML = "";
         
-        // 1. Cargar datos existentes y escuchar nuevos
-        onChildAdded(dbRef, (snapshot) => {
-            document.getElementById('loading').style.display = 'none';
-            crearFila(snapshot.key, snapshot.val());
+        // 1. ESCUCHAR ESTADO DE FLOTA (BAJAS)
+        onValue(dbFlotaRef, (snapshot) => {
+            mapaBajas = snapshot.val() || {}; // Actualizar variable local
+            // Si el admin tiene abierto el form principal, recargar para que se pongan grises
+            if(document.getElementById('selectorGrupo').value !== "") {
+                cargarUnidades('principal');
+            }
         });
 
-        // 2. Escuchar cambios (Ediciones)
-        onChildChanged(dbRef, (snapshot) => {
-            const filaVieja = document.getElementById(snapshot.key);
-            if(filaVieja) filaVieja.remove();
-            crearFila(snapshot.key, snapshot.val());
+        // 2. ESCUCHAR REPORTES
+        onChildAdded(dbRef, (snap) => { document.getElementById('loading').style.display='none'; crearFila(snap.key, snap.val()); });
+        onChildChanged(dbRef, (snap) => { 
+            let f = document.getElementById(snap.key); if(f) f.remove(); crearFila(snap.key, snap.val()); 
         });
-
-        // 3. Escuchar borrados
-        onChildRemoved(dbRef, (snapshot) => {
-            const fila = document.getElementById(snapshot.key);
-            if(fila) fila.remove();
-        });
+        onChildRemoved(dbRef, (snap) => { let f = document.getElementById(snap.key); if(f) f.remove(); });
     }
 
-    // --- 6. FUNCIÓN DE DIBUJADO DE FILA ---
     function crearFila(key, data) {
-        let badgesHtml = (data.fallas || []).map(f => {
-            let color = 'bg-primary';
-            if(f === 'GPS') color = 'bg-danger';
-            if(f === 'RFID') color = 'bg-warning text-dark';
-            if(f === 'NVR') color = 'bg-info text-dark';
-            if(f === 'Censado') color = 'bg-success';
-            return `<span class="badge ${color} badge-falla">${f}</span>`;
+        let badges = (data.fallas||[]).map(f => {
+            let c = f==='GPS'?'bg-danger':f==='RFID'?'bg-warning text-dark':f==='NVR'?'bg-info text-dark':'bg-success';
+            return `<span class="badge ${c} badge-falla">${f}</span>`;
         }).join('');
-
-        let estadoBadge = `<span class="badge bg-secondary">Pendiente</span>`;
-        let claseFila = "";
-        let botones = ""; 
-
-        // Definir botones según el ROL ACTUAL
-        if (rolActual === 'Técnico' || rolActual === 'Supervisor') {
-            if (data.estado !== "Completado") {
-                botones += `<button onclick="marcarCompletado('${key}')" class="btn btn-sm btn-success me-1" title="Listo">✅</button>`;
-            }
-            if (rolActual === 'Supervisor') {
-                botones += `<button onclick="eliminarReporte('${key}')" class="btn btn-sm btn-danger" title="Eliminar">🗑️</button>`;
-            }
-        } else {
-            botones = `<small class="text-muted">👁️</small>`;
-        }
-
-        if (data.estado === "Completado") {
-            estadoBadge = `<span class="badge bg-success">✅ Listo</span>`;
-            claseFila = "table-success"; 
-        }
-
-        const nuevaFila = `
-            <tr id="${key}" class="${claseFila}">
-                <td class="fw-bold">${data.unidad}</td>
-                <td>${badgesHtml}</td>
-                <td>${data.fecha} <br><small class="text-muted">${data.hora}</small></td>
-                <td>${estadoBadge}</td>
-                <td>${botones}</td>
-            </tr>
-        `;
         
-        // Insertamos al inicio de la tabla
-        document.getElementById('tablaCuerpo').insertAdjacentHTML('afterbegin', nuevaFila);
+        let acciones = `<small class="text-muted">👁️</small>`;
+        if (rolActual === 'Técnico' || rolActual === 'Supervisor') {
+            acciones = "";
+            if (data.estado !== "Completado") acciones += `<button onclick="marcarCompletado('${key}')" class="btn btn-sm btn-success me-1">✅</button>`;
+            if (rolActual === 'Supervisor') acciones += `<button onclick="eliminarReporte('${key}')" class="btn btn-sm btn-danger">🗑️</button>`;
+        }
+        
+        let colorFila = data.estado === "Completado" ? "table-success" : "";
+        let estadoTxt = data.estado === "Completado" ? `<span class="badge bg-success">✅ Listo</span>` : `<span class="badge bg-secondary">Pendiente</span>`;
+
+        const html = `<tr id="${key}" class="${colorFila}"><td class="fw-bold">${data.unidad}</td><td>${badges}</td><td>${data.fecha}<br><small>${data.hora}</small></td><td>${estadoTxt}</td><td>${acciones}</td></tr>`;
+        document.getElementById('tablaCuerpo').insertAdjacentHTML('afterbegin', html);
     }
 </script>
-
 </body>
 </html>
