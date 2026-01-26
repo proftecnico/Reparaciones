@@ -133,6 +133,33 @@
             </div>
         </div>
 
+        <div class="row mb-4 text-center g-3" id="tableroComando">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #ff9966, #ff5e62); color: white;">
+                    <div class="card-body">
+                        <h1 class="display-4 fw-bold mb-0" id="contadorPendientes">0</h1>
+                        <p class="mb-0"><i class="fas fa-tools me-2"></i>En Reparación</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #56ab2f, #a8e063); color: white;">
+                    <div class="card-body">
+                        <h1 class="display-4 fw-bold mb-0" id="contadorListas">0</h1>
+                        <p class="mb-0"><i class="fas fa-check-circle me-2"></i>Reparadas (Lista)</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #4568dc, #b06ab3); color: white;">
+                    <div class="card-body">
+                        <h1 class="display-4 fw-bold mb-0" id="contadorBajas">0</h1>
+                        <p class="mb-0"><i class="fas fa-ban me-2"></i>Unidades de Baja</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card">
             <div class="card-header bg-dark text-white d-flex flex-wrap justify-content-between align-items-center py-3">
                 <h5 class="mb-0"><i class="fas fa-list-alt me-2"></i>Reparaciones Pendientes</h5>
@@ -268,6 +295,10 @@
     let mapaBajas = {};
     let chartInstanceTipos = null;
     let chartInstanceUnidades = null;
+    
+    // --- NUEVO: CONFIGURACIÓN DE SONIDO ---
+    const sonidoAlerta = new Audio('https://www.soundjay.com/buttons/beep-01a.mp3'); 
+    let tiempoInicioSesion = new Date(); // Registramos cuándo abrió la app
 
     // --- LOGIN ---
     window.intentarLogin = function(rol) {
@@ -281,6 +312,10 @@
         }
         let nombreRol = rol.charAt(0).toUpperCase() + rol.slice(1);
         if(rol === 'tecnico') nombreRol = 'Técnico'; // Ajuste tilde
+        
+        // Reiniciamos el tiempo para que empiecen a sonar las alertas desde AHORA
+        tiempoInicioSesion = new Date(); 
+        
         iniciarApp(nombreRol);
     };
 
@@ -437,14 +472,13 @@
                 labels: Object.keys(fallas),
                 datasets: [{
                     data: Object.values(fallas),
-                    backgroundColor: ['#dc3545', '#ffc107', '#0dcaf0', '#198754'], // Colores acordes a badges
+                    backgroundColor: ['#dc3545', '#ffc107', '#0dcaf0', '#198754'],
                     borderWidth: 0
                 }]
             }
         });
 
         // 2. Chart Unidades (Bar) - Top 5
-        // Ordenar unidades por cantidad
         const topUnidades = Object.entries(unidades)
             .sort(([,a],[,b]) => b-a)
             .slice(0, 5);
@@ -468,7 +502,6 @@
         get(dbRef).then((snapshot) => {
             if (snapshot.exists()) {
                 const rawData = snapshot.val();
-                // Convertir objeto Firebase a Array plano para Excel
                 const dataParaExcel = Object.keys(rawData).map(key => {
                     const r = rawData[key];
                     return {
@@ -481,13 +514,9 @@
                         Observaciones: r.observaciones || ""
                     };
                 });
-
-                // Crear libro
                 const ws = XLSX.utils.json_to_sheet(dataParaExcel);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Reportes");
-
-                // Descargar
                 XLSX.writeFile(wb, "Reportes_Flota_" + new Date().toISOString().slice(0,10) + ".xlsx");
             } else {
                 mostrarToast("No hay datos para exportar", "warning");
@@ -531,13 +560,67 @@
         new bootstrap.Modal(document.getElementById('modalObservaciones')).show();
     };
 
+    // --- LÓGICA DASHBOARD ---
+    function actualizarTablero() {
+        const filas = document.querySelectorAll('#tablaCuerpo tr');
+        let pendientes = 0;
+        let listas = 0;
+        filas.forEach(fila => {
+            if (fila.classList.contains('table-success')) { listas++; } else { pendientes++; }
+        });
+        document.getElementById('contadorPendientes').innerText = pendientes;
+        document.getElementById('contadorListas').innerText = listas;
+        const totalBajas = Object.keys(mapaBajas).length;
+        document.getElementById('contadorBajas').innerText = totalBajas;
+    }
+
     // --- ESCUCHAS FIREBASE ---
     function activarEscuchasFirebase() {
         document.getElementById('tablaCuerpo').innerHTML = "";
-        onValue(dbFlotaRef, (snapshot) => { mapaBajas = snapshot.val() || {}; if(document.getElementById('selectorGrupo').value !== "") cargarUnidades('principal'); });
-        onChildAdded(dbRef, (snap) => { document.getElementById('loading').style.display='none'; crearFila(snap.key, snap.val()); });
-        onChildChanged(dbRef, (snap) => { let f = document.getElementById(snap.key); if(f) f.remove(); crearFila(snap.key, snap.val()); });
-        onChildRemoved(dbRef, (snap) => { let f = document.getElementById(snap.key); if(f) f.remove(); });
+        
+        onValue(dbFlotaRef, (snapshot) => { 
+            mapaBajas = snapshot.val() || {}; 
+            if(document.getElementById('selectorGrupo').value !== "") cargarUnidades('principal'); 
+            actualizarTablero(); 
+        });
+
+        onChildAdded(dbRef, (snap) => { 
+            document.getElementById('loading').style.display='none'; 
+            
+            // --- NUEVA LÓGICA DE SONIDO ---
+            // Solo suena si el reporte es NUEVO (se creó después de iniciar sesión)
+            // Y si no está completado
+            const data = snap.val();
+            
+            if (data.fecha && data.hora) {
+                // Parseamos la fecha del reporte "dd/mm/yyyy" y hora "HH:mm"
+                const [dia, mes, anio] = data.fecha.split('/');
+                const [horas, minutos] = data.hora.split(':');
+                const fechaReporte = new Date(anio, mes - 1, dia, horas, minutos);
+                
+                // Si la fecha del reporte es MAYOR a la hora de login, suena
+                if (fechaReporte > tiempoInicioSesion && data.estado !== 'Completado') {
+                    sonidoAlerta.play().catch(e => console.log("Sonido bloqueado por navegador", e));
+                    mostrarToast("🔔 ¡Nuevo ingreso de reparación!", "warning");
+                }
+            }
+
+            crearFila(snap.key, data); 
+            actualizarTablero(); 
+        });
+        
+        onChildChanged(dbRef, (snap) => { 
+            let f = document.getElementById(snap.key); 
+            if(f) f.remove(); 
+            crearFila(snap.key, snap.val()); 
+            actualizarTablero(); 
+        });
+        
+        onChildRemoved(dbRef, (snap) => { 
+            let f = document.getElementById(snap.key); 
+            if(f) f.remove(); 
+            actualizarTablero(); 
+        });
     }
 
     function crearFila(key, data) {
@@ -574,6 +657,4 @@
     }
 </script>
 </body>
-
 </html>
-
