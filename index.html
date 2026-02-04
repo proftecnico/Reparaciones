@@ -1525,9 +1525,84 @@
                     remove(ref(db, 'reparaciones/' + id)).then(() => mostrarToast('🗑️ Reporte eliminado.', 'success'));
                 }
             };
-            window.mostrarObservaciones = function (obs) {
-                document.getElementById('modalContenido').innerText = obs || 'Sin observaciones.';
-                new bootstrap.Modal(document.getElementById('modalObservaciones')).show();
+
+            window.abrirDetalles = function (id) {
+                const repRef = ref(db, 'reparaciones/' + id);
+                get(repRef).then((snap) => {
+                    if (!snap.exists()) return;
+                    const data = snap.val();
+                    const modal = new bootstrap.Modal(document.getElementById('modalDetalles'));
+
+                    // Llenar info básica
+                    document.getElementById('detalleBadgeUnidad').innerText = `Unidad #${data.unidad}`;
+                    document.getElementById('detalleFecha').innerText = data.fecha;
+                    document.getElementById('detalleHora').innerText = data.hora;
+                    document.getElementById('detalleUsuario').innerText = data.usuario || 'Desconocido';
+                    document.getElementById('detalleObservacion').innerText = data.observaciones || 'Sin observaciones.';
+
+                    // Prioridad
+                    const badgeP = document.getElementById('detalleBadgePrioridad');
+                    badgeP.className = `badge rounded-pill bg-white text-dark border`;
+                    badgeP.innerText = (data.prioridad || 'media').toUpperCase();
+
+                    // Fallas
+                    const contFallas = document.getElementById('detalleFallas');
+                    contFallas.innerHTML = (data.fallas || []).map(f => `<span class="badge bg-danger">${f}</span>`).join(' ');
+
+                    // ID temporal para comentarios
+                    document.getElementById('modalDetalles').dataset.currentId = id;
+
+                    // Cargar Comentarios
+                    cargarComentarios(id);
+
+                    modal.show();
+                });
+            };
+
+            function cargarComentarios(id) {
+                const comRef = ref(db, `reparaciones/${id}/comentarios`);
+                onValue(comRef, (snap) => {
+                    const cont = document.getElementById('listaComentarios');
+                    cont.innerHTML = "";
+                    if (!snap.exists()) {
+                        cont.innerHTML = '<div class="text-center text-muted py-5">No hay comentarios aún</div>';
+                        return;
+                    }
+                    snap.forEach(child => {
+                        const c = child.val();
+                        const div = document.createElement('div');
+                        div.className = "p-2 border-bottom small";
+                        div.innerHTML = `<strong>${c.usuario}:</strong> ${c.texto} <br><small class="text-muted">${c.fecha}</small>`;
+                        cont.appendChild(div);
+                    });
+                    cont.scrollTop = cont.scrollHeight;
+                });
+            }
+
+            window.enviarComentario = function () {
+                const id = document.getElementById('modalDetalles').dataset.currentId;
+                const input = document.getElementById('inputNuevoComentario');
+                const texto = input.value.trim();
+                if (!texto || !id) return;
+
+                push(ref(db, `reparaciones/${id}/comentarios`), {
+                    usuario: rolActual,
+                    texto: texto,
+                    fecha: new Date().toLocaleString('es-AR')
+                }).then(() => {
+                    input.value = "";
+                });
+            };
+
+            window.enviarNotificacionEscritorio = function (titulo, msg) {
+                if (!("Notification" in window)) return;
+                if (Notification.permission === "granted") {
+                    new Notification(titulo, { body: msg, icon: 'https://cdn-icons-png.flaticon.com/512/711/711192.png' });
+                } else if (Notification.permission !== "denied") {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === "granted") new Notification(titulo, { body: msg });
+                    });
+                }
             };
 
             // --- LÓGICA DASHBOARD ---
