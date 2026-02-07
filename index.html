@@ -1471,8 +1471,9 @@
                 });
             };
 
-            // --- EXPORTACIÓN GOOGLE CHAT CON CATBOX ---
+            // --- EXPORTACIÓN GOOGLE CHAT CON IMGBB ---
             async function enviarGraficoAChat() {
+                const IMGBB_KEY = atob("YmQ5YmU2NmYxZjAxM2ViNGMyMGY5Nzk5MDQ3M2UzOTQ=");
                 const WEBHOOK_URL = atob("aHR0cHM6Ly9jaGF0Lmdvb2dsZWFwaXMuY29tL3YxL3NwYWNlcy9BQVFBaV90Tk9BOC9tZXNzYWdlcz9rZXk9QUl6YVN5RGRJMGhDWnRFNnZ5U2pNbS1XRWZScTNDUHpxS3Fxc0hJJnRva2VuPUtIMWtTaFJmcVZxUjEtNDRqSVFyVHRVZmxseTZvbXlsTUlXSi1oQm5LdG8=");
                 const canvas = document.getElementById('chartTipos'); // Usamos el gráfico de distribución
                 const boton = document.getElementById('btn-exportar-chat');
@@ -1487,23 +1488,27 @@
                 boton.innerText = "Preparando...";
 
                 try {
-                    // 1. Convertir Canvas a Blob
-                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-                    if (!blob) throw new Error("No se pudo generar la imagen.");
+                    // 1. Obtener imagen en Base64
+                    const dataUrl = canvas.toDataURL("image/png");
+                    const base64Image = dataUrl.split(',')[1];
 
-                    // 2. Subir a Catbox.moe
-                    boton.innerText = "Subiendo (Catbox)...";
+                    // 2. Subir a ImgBB
+                    boton.innerText = "Subiendo (ImgBB)...";
                     const formData = new FormData();
-                    formData.append("reqtype", "fileupload");
-                    formData.append("fileToUpload", blob, "grafico_reporte.png");
+                    formData.append("image", base64Image);
 
-                    const catboxResponse = await fetch("https://catbox.moe/user/api.php", {
+                    const imgbbResponse = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {
                         method: "POST",
                         body: formData,
                     });
 
-                    if (!catboxResponse.ok) throw new Error("Error al subir imagen a Catbox");
-                    const downloadUrl = await catboxResponse.text();
+                    const imgbbData = await imgbbResponse.json();
+
+                    if (!imgbbData.success) {
+                        throw new Error("ImgBB rechazó la imagen: " + (imgbbData.error ? imgbbData.error.message : "Error desconocido"));
+                    }
+
+                    const downloadUrl = imgbbData.data.url;
 
                     // 3. Enviar a Google Chat Webhook
                     boton.innerText = "Enviando al chat...";
@@ -1514,7 +1519,7 @@
                             card: {
                                 header: {
                                     title: "Reporte de Estado de Flota",
-                                    subtitle: "Distribución (vía Catbox)",
+                                    subtitle: "Distribución (vía ImgBB)",
                                     imageUrl: "https://www.gstatic.com/images/icons/material/system/2x/insert_chart_grey600_48dp.png",
                                     imageType: "CIRCLE"
                                 },
