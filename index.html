@@ -1093,7 +1093,6 @@
 
         <script type="module">
             import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-            import { getStorage, ref as refStorage, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
             // --- THEME SYSTEM ---
             window.toggleTheme = function () {
                 const body = document.body;
@@ -1472,7 +1471,7 @@
                 });
             };
 
-            // --- EXPORTACIÓN GOOGLE CHAT ---
+            // --- EXPORTACIÓN GOOGLE CHAT CON CATBOX ---
             async function enviarGraficoAChat() {
                 const WEBHOOK_URL = atob("aHR0cHM6Ly9jaGF0Lmdvb2dsZWFwaXMuY29tL3YxL3NwYWNlcy9BQVFBaV90Tk9BOC9tZXNzYWdlcz9rZXk9QUl6YVN5RGRJMGhDWnRFNnZ5U2pNbS1XRWZScTNDUHpxS3Fxc0hJJnRva2VuPUtIMWtTaFJmcVZxUjEtNDRqSVFyVHRVZmxseTZvbXlsTUlXSi1oQm5LdG8=");
                 const canvas = document.getElementById('chartTipos'); // Usamos el gráfico de distribución
@@ -1485,24 +1484,29 @@
 
                 boton.disabled = true;
                 const originalContent = boton.innerHTML;
-                boton.innerText = "Generando...";
+                boton.innerText = "Preparando...";
 
                 try {
                     // 1. Convertir Canvas a Blob
                     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
                     if (!blob) throw new Error("No se pudo generar la imagen.");
 
-                    // 2. Subir a Firebase Storage
-                    boton.innerText = "Subiendo...";
-                    const storage = getStorage();
-                    const nombreArchivo = `reportes/reporte_${Date.now()}.png`;
-                    const storageRef = refStorage(storage, nombreArchivo);
+                    // 2. Subir a Catbox.moe
+                    boton.innerText = "Subiendo (Catbox)...";
+                    const formData = new FormData();
+                    formData.append("reqtype", "fileupload");
+                    formData.append("fileToUpload", blob, "grafico_reporte.png");
 
-                    const snapshot = await uploadBytes(storageRef, blob);
-                    const downloadUrl = await getDownloadURL(snapshot.ref);
+                    const catboxResponse = await fetch("https://catbox.moe/user/api.php", {
+                        method: "POST",
+                        body: formData,
+                    });
+
+                    if (!catboxResponse.ok) throw new Error("Error al subir imagen a Catbox");
+                    const downloadUrl = await catboxResponse.text();
 
                     // 3. Enviar a Google Chat Webhook
-                    boton.innerText = "Enviando...";
+                    boton.innerText = "Enviando al chat...";
 
                     const mensajeChat = {
                         cardsV2: [{
@@ -1510,7 +1514,7 @@
                             card: {
                                 header: {
                                     title: "Reporte de Estado de Flota",
-                                    subtitle: "Distribución de Fallas",
+                                    subtitle: "Distribución (vía Catbox)",
                                     imageUrl: "https://www.gstatic.com/images/icons/material/system/2x/insert_chart_grey600_48dp.png",
                                     imageType: "CIRCLE"
                                 },
