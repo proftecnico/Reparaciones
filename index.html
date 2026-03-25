@@ -89,6 +89,14 @@
             color: var(--text-main) !important;
         }
 
+        [data-theme="dark"] .text-secondary {
+            color: var(--text-muted) !important;
+        }
+
+        [data-theme="dark"] .text-muted {
+            color: #9ca3af !important;
+        }
+
         [data-theme="dark"] .table {
             color: var(--text-main);
             --bs-table-color: var(--text-main);
@@ -99,6 +107,109 @@
             background-color: #2c3034;
             color: var(--text-main);
             --bs-table-bg: #2c3034;
+        }
+
+        [data-theme="dark"] .table-success {
+            --bs-table-bg: rgba(25, 135, 84, 0.15);
+            --bs-table-color: var(--text-main);
+            color: var(--text-main);
+        }
+
+        [data-theme="dark"] .bg-light {
+            background-color: #2b3035 !important;
+            color: var(--text-main);
+        }
+
+        [data-theme="dark"] .navbar-custom {
+            background: var(--bg-card) !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        [data-theme="dark"] .border,
+        [data-theme="dark"] .border-bottom,
+        [data-theme="dark"] .border-end,
+        [data-theme="dark"] .border-light {
+            border-color: var(--border-color) !important;
+        }
+
+        [data-theme="dark"] .chat-container {
+            background: #1a1d21 !important;
+        }
+
+        [data-theme="dark"] .chat-bubble.other {
+            background-color: #2b3035;
+            border-color: var(--border-color);
+            color: var(--text-main);
+        }
+
+        [data-theme="dark"] .timeline-content {
+            background: #2b3035;
+            color: var(--text-main);
+        }
+
+        [data-theme="dark"] .input-group-text {
+            background-color: #343a40 !important;
+            border-color: var(--border-color);
+            color: var(--text-main);
+        }
+
+        [data-theme="dark"] .form-label {
+            color: var(--text-main);
+        }
+
+        [data-theme="dark"] .modal-body {
+            color: var(--text-main);
+        }
+
+        [data-theme="dark"] .modal-body .bg-light {
+            background-color: #1a1d21 !important;
+        }
+
+        [data-theme="dark"] .nav-tabs .nav-link {
+            color: var(--text-muted);
+        }
+
+        [data-theme="dark"] .nav-tabs .nav-link.active {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            border-color: var(--border-color) var(--border-color) var(--bg-card);
+        }
+
+        [data-theme="dark"] .tab-content {
+            background-color: var(--bg-card) !important;
+        }
+
+        [data-theme="dark"] .badge.bg-light {
+            background-color: #343a40 !important;
+            color: var(--text-main) !important;
+        }
+
+        [data-theme="dark"] #panelFiltros {
+            background: var(--bg-card);
+        }
+
+        [data-theme="dark"] .card-header {
+            border-color: var(--border-color);
+        }
+
+        [data-theme="dark"] .fw-bold.text-dark,
+        [data-theme="dark"] td.fw-bold {
+            color: var(--text-main) !important;
+        }
+
+        [data-theme="dark"] .alert-danger {
+            background-color: rgba(220, 53, 69, 0.15);
+            border-color: rgba(220, 53, 69, 0.3);
+            color: #f8d7da;
+        }
+
+        [data-theme="dark"] .rounded-3.border {
+            background-color: #2b3035 !important;
+        }
+
+        [data-theme="dark"] option {
+            background-color: var(--input-bg);
+            color: var(--text-main);
         }
 
         /* ANIMACIONES */
@@ -473,10 +584,23 @@
         /* FILTROS */
         #panelFiltros {
             background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-radius: 0;
+            padding: 12px 20px;
+            margin-bottom: 0;
+            box-shadow: none;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .filtros-inline {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filtros-inline .form-select-sm {
+            width: auto;
+            min-width: 140px;
         }
 
         .filtros-grid {
@@ -793,73 +917,6 @@
                     </div>
                 </div>
             </div>
-            <!-- Panel de Filtros -->
-            <div id="panelFiltros" style="display:none;">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="mb-0 fw-bold"><i class="fas fa-filter me-2"></i>Filtros Avanzados</h6>
-                    <button onclick="limpiarFiltros()" class="btn btn-sm btn-outline-secondary"><i
-                            class="fas fa-times me-1"></i>Limpiar</button>
-                </div>
-                <div class="filtros-grid">
-                    <div>
-                        <label class="form-label small fw-bold">Estado</label>
-                        <select class="form-select form-select-sm" id="filtroEstado" onchange="aplicarFiltros()">
-                            <option value="">Todos</option>
-                            <option value="Pendiente">Pendiente</option>
-                            <option value="Completado">Completado</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label small fw-bold">Prioridad</label>
-                        <select class="form-select form-select-sm" id="filtroPrioridad" onchange="aplicarFiltros()">
-                            <option value="">Todas</option>
-                            <option value="urgente">🔴 Urgente</option>
-                            <option value="alta">🟠 Alta</option>
-                            <option value="media">🟡 Media</option>
-                            <option value="baja">🟢 Baja</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="mt-3 text-center">
-                    <span class="contador-resultados" id="contadorResultados">Mostrando todos los reportes</span>
-                </div>
-            </div>
-            <!-- Panel de Filtros -->
-            <div id="panelFiltros" style="display:none;">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="mb-0 fw-bold"><i class="fas fa-filter me-2"></i>Filtros Avanzados</h6>
-                    <button onclick="limpiarFiltros()" class="btn btn-sm btn-outline-secondary"><i
-                            class="fas fa-times me-1"></i>Limpiar</button>
-                </div>
-                <div class="filtros-grid">
-                    <div>
-                        <label class="form-label small fw-bold">Estado</label>
-                        <select class="form-select form-select-sm" id="filtroEstado" onchange="aplicarFiltros()">
-                            <option value="">Todos</option>
-                            <option value="Pendiente">Pendiente</option>
-                            <option value="Completado">Completado</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label small fw-bold">Prioridad</label>
-                        <select class="form-select form-select-sm" id="filtroPrioridad" onchange="aplicarFiltros()">
-                            <option value="">Todas</option>
-                            <option value="urgente">🔴 Urgente</option>
-                            <option value="alta">🟠 Alta</option>
-                            <option value="media">🟡 Media</option>
-                            <option value="baja">🟢 Baja</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="mt-3 text-center">
-                    <span class="contador-resultados" id="contadorResultados">Mostrando todos los reportes</span>
-                </div>
-            </div>
-
-
-
-
-
             <div class="card">
                 <div
                     class="card-header bg-dark text-white d-flex flex-wrap justify-content-between align-items-center py-3">
@@ -874,28 +931,49 @@
                                 placeholder="Buscar unidad...">
                         </div>
                     </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0 text-center align-middle" id="tablaReportes">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th class="py-3">Unidad <i class="fas fa-sort text-muted ms-1"
-                                                style="cursor:pointer;" onclick="ordenarTabla(0)"></i></th>
-                                        <th>Fallas</th>
-                                        <th>Fecha <i class="fas fa-sort text-muted ms-1" style="cursor:pointer;"
-                                                onclick="ordenarTabla(2)"></i></th>
-                                        <th>Estado <i class="fas fa-sort text-muted ms-1" style="cursor:pointer;"
-                                                onclick="ordenarTabla(3)"></i></th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tablaCuerpo" class="bg-white"></tbody>
-                            </table>
-                        </div>
-                        <div id="loading" class="text-center p-5 text-muted">
-                            <div class="spinner-border text-primary" role="status"></div>
-                            <p class="mt-2 small">Conectando...</p>
-                        </div>
+                </div>
+                <!-- Panel de Filtros (inline, dentro de la card) -->
+                <div id="panelFiltros" style="display:none;">
+                    <div class="filtros-inline">
+                        <span class="small fw-bold"><i class="fas fa-filter me-1"></i>Filtrar:</span>
+                        <select class="form-select form-select-sm" id="filtroEstado" onchange="aplicarFiltros()">
+                            <option value="">Estado: Todos</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Completado">Completado</option>
+                        </select>
+                        <select class="form-select form-select-sm" id="filtroPrioridad" onchange="aplicarFiltros()">
+                            <option value="">Prioridad: Todas</option>
+                            <option value="urgente">🔴 Urgente</option>
+                            <option value="alta">🟠 Alta</option>
+                            <option value="media">🟡 Media</option>
+                            <option value="baja">🟢 Baja</option>
+                        </select>
+                        <button onclick="limpiarFiltros()" class="btn btn-sm btn-outline-secondary border-0"><i
+                                class="fas fa-times me-1"></i>Limpiar</button>
+                        <span class="contador-resultados ms-auto" id="contadorResultados">Mostrando todos</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 text-center align-middle" id="tablaReportes">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="py-3">Unidad <i class="fas fa-sort text-muted ms-1"
+                                            style="cursor:pointer;" onclick="ordenarTabla(0)"></i></th>
+                                    <th>Fallas</th>
+                                    <th>Fecha <i class="fas fa-sort text-muted ms-1" style="cursor:pointer;"
+                                            onclick="ordenarTabla(2)"></i></th>
+                                    <th>Estado <i class="fas fa-sort text-muted ms-1" style="cursor:pointer;"
+                                            onclick="ordenarTabla(3)"></i></th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaCuerpo" class="bg-white"></tbody>
+                        </table>
+                    </div>
+                    <div id="loading" class="text-center p-5 text-muted">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 small">Conectando...</p>
                     </div>
                 </div>
             </div>
