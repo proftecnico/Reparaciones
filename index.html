@@ -1584,6 +1584,26 @@
                 }
 
                 let listaFallas = Array.from(checkboxes).map(cb => cb.value);
+
+                // Configuración de destinatarios según el horario
+                const ahora = new Date();
+                const hora = ahora.getHours();
+                const minutos = ahora.getMinutes();
+
+                let destinatarios = "";
+                // De 00:00 a 11:00
+                if (hora < 11 || (hora === 11 && minutos === 0)) {
+                    destinatarios = "ruben.deleon@veolia.com,gustavo.mazzo@veolia.com,hector.pereyra@veolia.com,emiliano.diaz@veolia.com,gustavo.avalos@veolia.com,ariel.rodriguez@veolia.com,jorge.garavagno@veolia.com";
+                } else {
+                    // De 11:01 a 23:59
+                    destinatarios = "pablo.medina@veolia.com,gustavo.mazzo@veolia.com,ariel.rodriguez@veolia.com,jorge.garavagno@veolia.com,jorge.garavagno@veolia.com";
+                }
+
+                const asunto = `Reporte de Reparación - Unidad ${unidad}`;
+                const cuerpo = `Unidad: ${unidad}\nProblema: ${listaFallas.join(", ")}\n\nDejar fuera de servicio para comenzar con las reparaciones, por favor responder este mail a jorge.garavagno@veolia.com`;
+
+                window.location.href = `mailto:${destinatarios}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}`;
+
                 push(dbRef, {
                     unidad: unidad,
                     fallas: listaFallas,
