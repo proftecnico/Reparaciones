@@ -1428,8 +1428,8 @@
             const minutos = ahora.getMinutes();
 
             let destinatarios = (hora < 11 || (hora === 11 && minutos === 0))
-                ? "jorge.garavagno@veolia.com"
-                : "jorge.garavagno@veolia.com";
+                ? "jorge.garavagno@veolia.com , luis.saez@veolia.com , maximiliano.romero@veolia.com , lucas.castro@veolia.com , emiliano.diaz@veolia.com"
+                : "jorge.garavagno@veolia.com , luis.saez@veolia.com , maximiliano.romero@veolia.com , lucas.castro@veolia.com , emiliano.diaz@veolia.com";
 
             const asunto = `[${prioridad.toUpperCase()}] Reporte de Reparación - Unidad ${unidad}`;
             const cuerpo = `Unidad: ${unidad}\nFallas: ${listaFallas.join(", ")}\nPrioridad: ${prioridad.toUpperCase()}\nObservaciones: ${obs || '(ninguna)'}\n\nDejar fuera de servicio para comenzar con las reparaciones.\nPor favor responder este mail a jorge.garavagno@veolia.com`;
